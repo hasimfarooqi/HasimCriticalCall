@@ -90,17 +90,80 @@ app.get("/critical-alert", async (req, res) => {
 
     const client = twilio(accountSid, authToken);
 
-    // Twilio will visit this public URL and receive
-    // the instructions for what to say.
-    const twimlUrl =
-      publicBaseUrl.replace(/\/$/, "") +
-      "/twiml/" +
-      encodeURIComponent(alertId);
+    // Give Twilio the voice instructions directly.
+    // This avoids depending on a second request to the Render server.
+    const voice = new twilio.twiml.VoiceResponse();
+
+    voice.say(
+      {
+        language: "en-US"
+      },
+      "Critical alert."
+    );
+
+    if (userName) {
+      voice.say(
+        {
+          language: "en-US"
+        },
+        "User name: " + userName
+      );
+    }
+
+    if (userId) {
+      voice.say(
+        {
+          language: "en-US"
+        },
+        "User ID: " + userId
+      );
+    }
+
+    voice.say(
+      {
+        language: "en-US"
+      },
+      "Severity: " + severity
+    );
+
+    voice.say(
+      {
+        language: "en-US"
+      },
+      "Reason: " + reason
+    );
+
+    if (userMessage) {
+      voice.say(
+        {
+          language: "en-US"
+        },
+        "User message: " + userMessage
+      );
+    }
+
+    if (aiReply) {
+      voice.say(
+        {
+          language: "en-US"
+        },
+        "AI reply: " + aiReply
+      );
+    }
+
+    voice.say(
+      {
+        language: "en-US"
+      },
+      "Please check the issue immediately."
+    );
+
+    voice.hangup();
 
     const call = await client.calls.create({
       to: toNumber,
       from: fromNumber,
-      url: twimlUrl
+      twiml: voice.toString()
     });
 
     console.log("Critical call created:", call.sid);
