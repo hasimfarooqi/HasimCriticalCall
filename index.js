@@ -32,8 +32,21 @@ app.get("/critical-alert", async (req, res) => {
     const publicBaseUrl = process.env.PUBLIC_BASE_URL;
     const alertKey = process.env.ALERT_KEY;
 
-    // Simple protection so random people cannot trigger calls.
-    if (alertKey && req.query.key !== alertKey) {
+    // AIX can use the same existing ALERT_KEY through X-AIX-Key.
+    // Manual testing can continue using ?key=...
+    const suppliedAixKey = req.get("X-AIX-Key") || "";
+
+    const aixAuthorized =
+      alertKey &&
+      suppliedAixKey &&
+      suppliedAixKey === alertKey;
+
+    const legacyAuthorized =
+      alertKey &&
+      req.query.key &&
+      req.query.key === alertKey;
+
+    if (!aixAuthorized && !legacyAuthorized) {
       return res.status(401).send("Unauthorized.");
     }
 
